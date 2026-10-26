@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Мониторинг сервисов VK</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--tx:#1c1e21;--mu:#6b7280;--ok:#16a34a;--bad:#dc2626;--bd:#e5e7eb}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#181b21;--tx:#e8eaed;--mu:#9aa0aa;--bd:#2a2f38}}
+*{box-sizing:border-box}body{margin:0;font:15px system-ui,sans-serif;background:var(--bg);color:var(--tx)}
+main{max-width:980px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:22px;margin:0 0 4px}.mu{color:var(--mu);font-size:13px}
+.banner{margin:16px 0;padding:14px 16px;border-radius:10px;font-weight:600;color:#fff;background:var(--ok)}
+.banner.bad{background:var(--bad)}.banner.na{background:var(--mu)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px 14px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:8px;background:var(--mu)}
+.dot.up{background:var(--ok)}.dot.down{background:var(--bad)}
+.name{font-weight:600}.spark{display:flex;gap:2px;height:26px;align-items:flex-end;margin:10px 0 6px}
+.spark i{flex:1;min-width:2px;background:var(--ok);border-radius:1px;opacity:.85}.spark i.d{background:var(--bad);height:100%!important}
+h2{font-size:17px;margin:28px 0 8px}table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--bd)}
+td,th{padding:8px 12px;text-align:left;border-bottom:1px solid var(--bd);font-size:14px}th{color:var(--mu);font-weight:500}
+</style></head><body><main>
+<h1>Мониторинг сервисов VK</h1>
+<div class="mu" id="upd">Загрузка…</div>
+<div class="banner na" id="banner">Проверяем…</div>
+<div class="grid" id="grid"></div>
+<h2>История сбоев</h2>
+<table><thead><tr><th>Сервис</th><th>Начало</th><th>Длительность</th></tr></thead><tbody id="inc"></tbody></table>
+<p class="mu">Проверки выполняются каждые 5 минут. Сервис считается доступным, если ответ получен за 8 с с HTTP-кодом ниже 500. Аптайм — за 24 часа.</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const fmt=t=>new Date(t).toLocaleString('ru-RU');
+const dur=(a,b)=>{let s=Math.round(((b||Date.now())-a)/1000),m=Math.floor(s/60),h=Math.floor(m/60);return h?`${h} ч ${m%60} мин`:m?`${m} мин`:`${s} с`};
+async function load(){
+  let d;
+  for(const u of ['/api/status','api/status.php']){
+    try{const r=await fetch(u);if(r.ok&&(r.headers.get('content-type')||'').includes('json')){d=await r.json();break}}catch{}
+  }
+  if(!d){$('banner').textContent='API недоступен';$('banner').className='banner bad';return}
+  $('upd').textContent='Обновлено: '+fmt(d.updated);
+  const known=d.services.filter(s=>s.up!==null),down=known.filter(s=>!s.up),b=$('banner');
+  if(!known.length){b.textContent='Данных пока нет — дождитесь первой проверки';b.className='banner na'}
+  else if(!down.length){b.textContent='Все сервисы работают';b.className='banner'}
+  else{b.textContent=`Проблемы: ${down.length} из ${known.length} — ${down.map(s=>s.name).join(', ')}`;b.className='banner bad'}
+  $('grid').innerHTML=d.services.map(s=>{
+    const mx=Math.max(1,...s.history.map(h=>h.ms));
+    const sp=s.history.map(h=>h.up?`<i style="height:${Math.max(12,h.ms/mx*100)}%" title="${h.ms} мс"></i>`:'<i class="d"></i>').join('');
+    return `<div class="card"><div class="row"><span class="name"><span class="dot ${s.up===null?'':s.up?'up':'down'}"></span>${s.name}</span>
+    <span class="mu">${s.up===null?'нет данных':s.ms+' мс'}</span></div>
+    <div class="spark">${sp}</div>
+    <div class="row mu"><span>Аптайм 24ч: ${s.uptime??'—'}%</span><span>Средн.: ${s.avg??'—'} мс</span></div></div>`}).join('');
+  $('inc').innerHTML=d.incidents.length?d.incidents.map(i=>`<tr><td>${i.name}</td><td>${fmt(i.from)}</td><td>${i.to?dur(i.from,i.to):'<b style="color:var(--bad)">продолжается · '+dur(i.from)+'</b>'}</td></tr>`).join(''):'<tr><td colspan="3" class="mu">Сбоев не зафиксировано</td></tr>';
+}
+load();setInterval(load,60000);
+</script></body></html>
