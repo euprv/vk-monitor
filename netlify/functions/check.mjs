@@ -5,9 +5,9 @@ export const config = { schedule: "*/5 * * * *" };
 
 async function probe(s) {
   const t = Date.now(), c = new AbortController();
-  const to = setTimeout(() => c.abort(), 8000);
+  const to = setTimeout(() => c.abort(), 12000);
   try {
-    const r = await fetch(s.url, { redirect: "follow", signal: c.signal, headers: { "user-agent": "VKStatusMonitor/1.0" } });
+    const r = await fetch(s.url, { redirect: "follow", signal: c.signal, headers: { "user-agent": "Mozilla/5.0 (compatible; VKStatusMonitor/1.0; +https://example.com) AppleWebKit/537.36 Chrome/124.0 Safari/537.36", "accept": "text/html,application/json;q=0.9,*/*;q=0.8", "accept-language": "ru,en;q=0.8" } });
     return { up: r.status < 500, code: r.status, ms: Date.now() - t };
   } catch { return { up: false, code: 0, ms: Date.now() - t }; }
   finally { clearTimeout(to); }
@@ -22,7 +22,7 @@ export default async () => {
     const r = res[i], h = db.h[s.id] || (db.h[s.id] = []), prev = h[h.length - 1];
     h.push({ t: now, up: r.up, ms: r.ms, code: r.code });
     if (h.length > 2016) h.shift(); // 7 суток при шаге 5 минут
-    if (prev && prev.up && !r.up) db.inc.unshift({ id: s.id, name: s.name, from: now, to: null });
+    if ((!prev || prev.up) && !r.up) db.inc.unshift({ id: s.id, name: s.name, from: now, to: null });
     if (prev && !prev.up && r.up) { const o = db.inc.find(x => x.id === s.id && !x.to); if (o) o.to = now; }
   });
   db.inc = db.inc.slice(0, 100);
