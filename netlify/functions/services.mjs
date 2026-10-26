@@ -1,0 +1,16 @@
+export const SERVICES = [
+  { id: "vk", name: "VK (веб)", url: "https://vk.com" },
+  { id: "vk-m", name: "VK мобильная версия", url: "https://m.vk.com" },
+  { id: "vk-api", name: "VK API", url: "https://api.vk.com/method/utils.getServerTime" },
+  { id: "vk-id", name: "VK ID", url: "https://id.vk.com" },
+  { id: "vk-video", name: "VK Видео", url: "https://vkvideo.ru" },
+  { id: "vk-music", name: "VK Музыка", url: "https://music.vk.com" },
+  { id: "ok", name: "Одноклассники", url: "https://ok.ru" },
+  { id: "mail", name: "Mail.ru", url: "https://mail.ru" },
+  { id: "e-mail", name: "Почта Mail.ru", url: "https://e.mail.ru" },
+  { id: "cloud", name: "Облако Mail.ru", url: "https://cloud.mail.ru" },
+  { id: "dzen", name: "Дзен", url: "https://dzen.ru" },
+  { id: "vkplay", name: "VK Play", url: "https://vkplay.ru" },
+  { id: "rustore", name: "RuStore", url: "https://rustore.ru" },
+  { id: "vk-company", name: "VK Company", url: "https://vk.company" },
+];
